@@ -6,10 +6,10 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-surface">
       <Sidebar />
-      <main className="lg:pl-64 transition-all duration-300">
-        <div className="p-4 lg:p-8 max-w-7xl mx-auto">
+      <main className="lg:pl-60 transition-all duration-300">
+        <div className="p-6 lg:p-8 max-w-7xl mx-auto">
           {children}
         </div>
       </main>

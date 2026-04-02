@@ -1,84 +1,59 @@
-import { 
-  TrendingUp, 
-  Users, 
-  Package, 
-  AlertCircle,
-  ArrowUpRight,
-  ArrowDownRight
-} from 'lucide-react'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { TrendingUp, Users, Package, AlertTriangle, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { createClient } from '@/utils/supabase/client'
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState({ equipment: 0, clients: 0, bookings: 0, maintenance: 0 })
+
+  useEffect(() => {
+    const load = async () => {
+      const supabase = createClient()
+      const [eq, cl, bk, mt] = await Promise.all([
+        supabase.from('equipment').select('id', { count: 'exact', head: true }),
+        supabase.from('clients').select('id', { count: 'exact', head: true }),
+        supabase.from('bookings').select('id', { count: 'exact', head: true }),
+        supabase.from('maintenance_logs').select('id', { count: 'exact', head: true }),
+      ])
+      setStats({
+        equipment: eq.count || 0,
+        clients: cl.count || 0,
+        bookings: bk.count || 0,
+        maintenance: mt.count || 0,
+      })
+    }
+    load()
+  }, [])
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Bienvenido, Admin</h1>
-        <p className="text-gray-400">Aquí tienes el resumen de tu negocio de rentas para hoy.</p>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-muted text-sm mt-1">Resumen general de tu negocio de rentas.</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatCard 
-          title="Ingresos Totales" 
-          value="$12,450.00" 
-          change="+12.5%" 
-          trend="up"
-          icon={TrendingUp} 
-        />
-        <StatCard 
-          title="Equipos Rentados" 
-          value="42" 
-          change="+3" 
-          trend="up"
-          icon={Package} 
-        />
-        <StatCard 
-          title="Nuevos Clientes" 
-          value="8" 
-          change="-2" 
-          trend="down"
-          icon={Users} 
-        />
-        <StatCard 
-          title="Mantenimiento" 
-          value="4" 
-          change="Revisión urgente" 
-          trend="neutral"
-          icon={AlertCircle} 
-          isAlert
-        />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Activos Registrados" value={stats.equipment} icon={Package} color="blue" />
+        <StatCard title="Clientes" value={stats.clients} icon={Users} color="green" />
+        <StatCard title="Rentas" value={stats.bookings} icon={TrendingUp} color="blue" />
+        <StatCard title="Mantenimiento" value={stats.maintenance} icon={AlertTriangle} color={stats.maintenance > 0 ? "amber" : "blue"} />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        {/* Placeholder for Analytics Chart */}
-        <div className="lg:col-span-4 glass rounded-3xl p-6 h-[400px] flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-lg">Tendencias de Uso</h3>
-            <button className="text-sm text-brand font-medium">Ver reporte →</button>
-          </div>
-          <div className="flex-1 flex items-center justify-center text-gray-500 border-2 border-dashed border-border rounded-2xl my-4 italic">
-            Gráfico de tendencias (Chart.js / Recharts)
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2 card p-6">
+          <h3 className="font-semibold text-foreground mb-4">Actividad Reciente</h3>
+          <div className="flex items-center justify-center h-48 text-muted text-sm border border-dashed border-border rounded-xl">
+            Los datos de actividad se mostrarán aquí conforme uses el sistema.
           </div>
         </div>
-
-        {/* Recent Activity / Calendar Summary */}
-        <div className="lg:col-span-3 glass rounded-3xl p-6 h-[400px] flex flex-col">
-          <h3 className="font-semibold text-lg mb-4">Próximas Entregas</h3>
-          <div className="space-y-4">
-            <ActivityItem 
-              item="Carpa Evento 10x10" 
-              time="Mañana, 09:00 AM" 
-              customer="Juan Perez" 
-            />
-            <ActivityItem 
-              item="Mezcladora de Cemento" 
-              time="2 Abr, 02:00 PM" 
-              customer="Construcciones S.A" 
-            />
-            <ActivityItem 
-              item="Andamios x6" 
-              time="4 Abr, 08:30 AM" 
-              customer="Admin" 
-            />
+        <div className="card p-6">
+          <h3 className="font-semibold text-foreground mb-4">Accesos Rápidos</h3>
+          <div className="space-y-2">
+            <QuickLink href="/dashboard/inventory" label="Agregar activo" icon="📦" />
+            <QuickLink href="/dashboard/clients" label="Nuevo cliente" icon="👤" />
+            <QuickLink href="/dashboard/calendar" label="Crear renta" icon="📋" />
+            <QuickLink href="/dashboard/projects" label="Nuevo proyecto" icon="🏗️" />
           </div>
         </div>
       </div>
@@ -86,52 +61,29 @@ export default function DashboardPage() {
   )
 }
 
-function StatCard({ title, value, change, icon: Icon, trend, isAlert = false }: any) {
+function StatCard({ title, value, icon: Icon, color }: any) {
+  const colors: any = {
+    blue: 'badge-info',
+    green: 'badge-success',
+    amber: 'badge-warn',
+    red: 'badge-danger',
+  }
   return (
-    <div className="glass rounded-3xl p-6 flex flex-col gap-1 hover:border-brand/40 transition-colors">
-      <div className="flex items-center justify-between text-gray-400">
-        <span className="text-sm font-medium">{title}</span>
-        <div className={cn(
-          "p-2 rounded-xl",
-          isAlert ? "bg-red-500/10 text-red-400" : "bg-brand/10 text-brand"
-        )}>
-          <Icon size={20} />
-        </div>
+    <div className="card p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-muted">{title}</span>
+        <div className={`p-2 rounded-lg ${colors[color]}`}><Icon size={18} /></div>
       </div>
-      <div className="text-2xl font-bold">{value}</div>
-      <div className="flex items-center gap-1 text-xs mt-2">
-        {trend === 'up' && <ArrowUpRight size={14} className="text-accent" />}
-        {trend === 'down' && <ArrowDownRight size={14} className="text-red-400" />}
-        <span className={cn(
-          "font-medium",
-          trend === 'up' ? "text-accent" : trend === 'down' ? "text-red-400" : "text-gray-500"
-        )}>{change}</span>
-        <span className="text-gray-500 font-normal ml-0.5">desde el mes pasado</span>
-      </div>
+      <span className="text-3xl font-bold text-foreground">{value}</span>
     </div>
   )
 }
 
-function ActivityItem({ item, time, customer }: any) {
+function QuickLink({ href, label, icon }: any) {
   return (
-    <div className="flex items-center gap-4 p-3 hover:bg-surface/50 rounded-2xl transition-colors group">
-      <div className="h-10 w-10 rounded-xl bg-surface flex items-center justify-center text-brand font-bold">
-        {item[0]}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate group-hover:text-brand">{item}</p>
-        <p className="text-xs text-gray-500 truncate">{customer}</p>
-      </div>
-      <div className="text-[10px] font-medium text-gray-400 bg-surface px-2 py-1 rounded-lg">
-        {time}
-      </div>
-    </div>
+    <a href={href} className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-alt transition-colors text-sm font-medium text-foreground">
+      <span className="text-lg">{icon}</span>
+      {label}
+    </a>
   )
-}
-
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
 }
