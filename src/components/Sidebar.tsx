@@ -21,7 +21,7 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true)
 
   const handleLogout = async () => {
     const supabase = createClient()
